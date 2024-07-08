@@ -10,7 +10,8 @@
 #include <sys/wait.h>
 
 
-
+int READ_END = 0;
+int WRITE_END = 1;
 
 
 void write_bmp_nopointer(const char* filename, BMPImage image) {
@@ -122,27 +123,12 @@ int main(int argc, char *argv[]) {
     int i=0;
 
     int tuberias[2];
-    
 
-     int status=0;
+    int status=0;
         
     //DE AQUI EMPIEZA EL CODIGO IMPORTANTE
-
-    const char* filename = N;
-    BMPImage* image = read_bmp(filename);
-
-
-
-    if (!image) {
-        exit(1);
-        return 1;
-    }
-    
-
-   
-
-    printf("  Ancho de la imagen: %d\n", image->width);
-    printf("  Alto de la imagen: %d\n", image->height);
+    //printf("  Ancho de la imagen: %d\n", image->width);
+    //printf("  Alto de la imagen: %d\n", image->height);
 
     // Acceder a los píxeles de la imagen
     /*
@@ -162,7 +148,9 @@ int main(int argc, char *argv[]) {
            close(tuberias[1]); // Cerramos el extremo de escritura del pipe en el hijo
 
         // Redirigir la entrada estándar para leer desde el pipe
-           dup2(tuberias[0], STDIN_FILENO);
+           dup2(tuberias[READ_END], STDERR_FILENO);
+
+           close(tuberias[READ_END]);
            //SOY EL HIJO
            
 
@@ -181,34 +169,53 @@ int main(int argc, char *argv[]) {
     } else {
         //SOY EL PADRE
             //char texto[100]="David y Claudio";
+            const char* filename = N;
+            BMPImage* image = read_bmp(filename);
+
+            if (!image) {
+                exit(1);
+                return 1;
+            }
+                /*
+                for (int y = 0; y < image->height; y++) {
+                    for (int x = 0; x < image->width; x++) {
+                        RGBPixel pixel = image->data[y * image->width + x];
+                        printf("Pixel (%d, %d): R=%d, G=%d, B=%d\n", x, y, pixel.r, pixel.g, pixel.b);
+                    }
+                }
+                */       
             int ancho= image->width;
            
-            close(tuberias[0]);
-            write(tuberias[1],&image->width,sizeof(int));
-            write(tuberias[1],&image->height,sizeof(int));
+            close(tuberias[READ_END]);
+
+
+            write(tuberias[WRITE_END],&image->width,sizeof(int));
+            write(tuberias[WRITE_END],&image->height,sizeof(int));
             //write(tuberias[1],texto,sizeof(char)*100);
             
-        for (int y = 0; y < image->height; y++) {
-            for (int x = 0; x < image->width; x++) {
-            RGBPixel pixelBonito = image->data[y * image->width + x];
-            int r=(int) pixelBonito.r;
-            int g=(int) pixelBonito.g;
-            int b=(int) pixelBonito.b;
-            write(tuberias[1],&r,sizeof(int));
-            write(tuberias[1],&g,sizeof(int));
-            write(tuberias[1],&b,sizeof(int));
+            for (int y = 0; y < image->height; y++) {
+                for (int x = 0; x < image->width; x++) {
+                RGBPixel pixelBonito = image->data[y * image->width + x];
+                int r=(int) pixelBonito.r;
+                int g=(int) pixelBonito.g;
+                int b=(int) pixelBonito.b;
+                write(tuberias[WRITE_END],&pixelBonito.r,sizeof(unsigned char));
+                write(tuberias[WRITE_END],&pixelBonito.g,sizeof(unsigned char));
+                write(tuberias[WRITE_END],&pixelBonito.b,sizeof(unsigned char));
+                }
             }
-        }
-            
+                
   
             printf("  CREADO WORKER 1 CON PID %d\n", workers[0]);
             printf("JUSTO ANTES DEL WRITE DEL PIPE DE LA IMAGEN \n");
 
 
+  
             wait(&status);
 
-            //write_bmp("./PADREFORK.bmp",image);
             
+            write_bmp("./PADREFORK.bmp",image);
+
 
             printf("ANTES DEL FREE \n");
             
@@ -216,10 +223,12 @@ int main(int argc, char *argv[]) {
             printf("  EL nombre del archivo es %s \n",N);
             printf("  Los valores ingresados son:\n NombreArchivo=%s\n numerodefiltros(f)=%i\n factor de saturacion(p)=%f \n Umbral para binarizar(u)=%f \n Umbral para clasificar(v)=%f \n NombreCarpeta(C)=%s \n NombreLogCsv(R)=%s \n numerodetrabajdores(W)=%i\n",N, f, p,u,v,C,R,W);
             printf("  Terminó el BROKER \n");
+
+            free_bmp(image);
          
         }
     
-    free_bmp(image);
-    exit(EXIT_SUCCESS);
+ 
+    exit(0);
     return 0;
 }

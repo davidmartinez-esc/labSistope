@@ -134,12 +134,12 @@ int main(int argc, char *argv[]) {
             
   
 
-    //read(STDIN_FILENO,&imagenRecibida,sizeof(BMPImage));
+    //read(STDERR_FILENO,&imagenRecibida,sizeof(BMPImage));
 
-    //read(STDIN_FILENO,&texto,sizeof(char)*100);
+    //read(STDERR_FILENO,&texto,sizeof(char)*100);
 
-    read(STDIN_FILENO,&imagenRecibida.width,sizeof(int));
-    read(STDIN_FILENO,&imagenRecibida.height,sizeof(int));
+    read(STDERR_FILENO,&imagenRecibida.width,sizeof(int));
+    read(STDERR_FILENO,&imagenRecibida.height,sizeof(int));
 
     imagenRecibida.data = (RGBPixel*)malloc(imagenRecibida.width * imagenRecibida.height * sizeof(RGBPixel));
 
@@ -149,12 +149,12 @@ int main(int argc, char *argv[]) {
      for (int y = 0; y < imagenRecibida.height; y++) {
             for (int x = 0; x < imagenRecibida.width; x++) {
             RGBPixel pixelRecibido;
-            read(STDIN_FILENO,&r,sizeof(int));
-            read(STDIN_FILENO,&g,sizeof(int));
-            read(STDIN_FILENO,&b,sizeof(int));
-            pixelRecibido.r=(unsigned char) r;
-            pixelRecibido.g=(unsigned char) g;
-            pixelRecibido.b=(unsigned char) b;
+            read(STDERR_FILENO,&pixelRecibido.r,sizeof(unsigned char));
+            read(STDERR_FILENO,&pixelRecibido.g,sizeof(unsigned char));
+            read(STDERR_FILENO,&pixelRecibido.b,sizeof(unsigned char));
+            //pixelRecibido.r=(unsigned char) r;
+            //pixelRecibido.g=(unsigned char) g;
+            //pixelRecibido.b=(unsigned char) b;
 
             imagenRecibida.data[y * imagenRecibida.width + x] = pixelRecibido;
             //imagenRecibida.data[y * imagenRecibida.width + x]=pixelRecibido;
@@ -164,18 +164,20 @@ int main(int argc, char *argv[]) {
     //printf("El texto es %s \n",texto);
     printf("EL CHANCHO LEIDO ES %d Y EL LARGO ES %d \n",imagenRecibida.width, imagenRecibida.height);
     
-    for (int y = 0; y < imagenRecibida.height; y++) {
-        for (int x = 0; x < imagenRecibida.width; x++) {
-            RGBPixel pixel = imagenRecibida.data[y * imagenRecibida.width + x];
-            printf("R= %d G=%d B=%d \n",pixel.r,pixel.g,pixel.b);
-        }
-    }
+    
+      for (int y = 0; y < imagenRecibida.height; y++) {
+                    for (int x = 0; x < imagenRecibida.width; x++) {
+                        RGBPixel pixel = imagenRecibida.data[y * imagenRecibida.width + x];
+                        printf("Pixel (%d, %d): R=%d, G=%d, B=%d\n", x, y, pixel.r, pixel.g, pixel.b);
+                    }
+                }
     
    
     
      
 
     write_bmp_nopointer("./finalmente.bmp",imagenRecibida);
+    
     BMPImage* saturada=saturate_bmp(&imagenRecibida,5.0);
     write_bmp("./MAJORAS.bmp",saturada);
     
@@ -183,6 +185,6 @@ int main(int argc, char *argv[]) {
  
     printf("TERMINÓ EL WORKER \n");
 
-    exit(EXIT_SUCCESS);
-    return 0;
+    exit(0);
+
 }
