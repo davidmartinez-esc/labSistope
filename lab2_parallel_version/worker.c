@@ -8,6 +8,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+
+#define READ_END 0
+#define WRITE_END 1
+
 void write_bmp_nopointer(const char* filename, BMPImage image) {
     FILE* file = fopen(filename, "wb"); //wb = write binary
     if (!file) {
@@ -121,37 +125,29 @@ BMPImage* receive_image_from_pipe(int fd) {
 
 int main(int argc, char *argv[]) {
     printf("    Empezó el WORKER \n");
-   
-    int tuberiasCero=atoi(argv[1]);
-    int tuberiasUno=atoi(argv[2]);
+
+    int fd[2];
+
+    fd[READ_END]=atoi(argv[2]);
+    fd[WRITE_END]=atoi(argv[1]);
 
     BMPImage imagenRecibida;
-    //char texto[100];
-
-    printf("TUBERIAS CERO %d TUBERIAS UNO %d \n", tuberiasCero,tuberiasUno);
-    
-    close(tuberiasUno);
-            
-  
-
-    //read(STDERR_FILENO,&imagenRecibida,sizeof(BMPImage));
-
-    //read(STDERR_FILENO,&texto,sizeof(char)*100);
-
-    read(STDERR_FILENO,&imagenRecibida.width,sizeof(int));
-    read(STDERR_FILENO,&imagenRecibida.height,sizeof(int));
+ 
+    read(fd[READ_END],&imagenRecibida.width,sizeof(int));
+    read(fd[READ_END],&imagenRecibida.height,sizeof(int));
 
     imagenRecibida.data = (RGBPixel*)malloc(imagenRecibida.width * imagenRecibida.height * sizeof(RGBPixel));
 
     int r;
     int g;
     int b;
+    printf("EMPEZÓ A LEER  WORKER\n");
      for (int y = 0; y < imagenRecibida.height; y++) {
             for (int x = 0; x < imagenRecibida.width; x++) {
             RGBPixel pixelRecibido;
-            read(STDERR_FILENO,&pixelRecibido.r,sizeof(unsigned char));
-            read(STDERR_FILENO,&pixelRecibido.g,sizeof(unsigned char));
-            read(STDERR_FILENO,&pixelRecibido.b,sizeof(unsigned char));
+            read(fd[READ_END],&pixelRecibido.r,sizeof(unsigned char));
+            read(fd[READ_END],&pixelRecibido.g,sizeof(unsigned char));
+            read(fd[READ_END],&pixelRecibido.b,sizeof(unsigned char));
             //pixelRecibido.r=(unsigned char) r;
             //pixelRecibido.g=(unsigned char) g;
             //pixelRecibido.b=(unsigned char) b;
@@ -160,31 +156,28 @@ int main(int argc, char *argv[]) {
             //imagenRecibida.data[y * imagenRecibida.width + x]=pixelRecibido;
             }
         }
-    
-    //printf("El texto es %s \n",texto);
-    printf("EL CHANCHO LEIDO ES %d Y EL LARGO ES %d \n",imagenRecibida.width, imagenRecibida.height);
-    
-    
-      for (int y = 0; y < imagenRecibida.height; y++) {
-                    for (int x = 0; x < imagenRecibida.width; x++) {
-                        RGBPixel pixel = imagenRecibida.data[y * imagenRecibida.width + x];
-                        printf("Pixel (%d, %d): R=%d, G=%d, B=%d\n", x, y, pixel.r, pixel.g, pixel.b);
-                    }
-                }
-    
+
+        printf("TERMINÓ DE LEER WORKER \n");
+
+      
    
-    
-     
+    BMPImage* imagenEscalaGrises=greyscale_bmp(&imagenRecibida);
+   
 
-    write_bmp_nopointer("./finalmente.bmp",imagenRecibida);
+    for (int y = 0; y < imagenEscalaGrises->height; y++) {
+                for (int x = 0; x < imagenEscalaGrises->width; x++) {
+                RGBPixel pixelBonito = imagenEscalaGrises->data[y * imagenEscalaGrises->width + x];
+                int r=(int) pixelBonito.r;
+                int g=(int) pixelBonito.g;
+                int b=(int) pixelBonito.b;
+                write(fd[WRITE_END],&pixelBonito.r,sizeof(unsigned char));
+                write(fd[WRITE_END],&pixelBonito.g,sizeof(unsigned char));
+                write(fd[WRITE_END],&pixelBonito.b,sizeof(unsigned char));
+             }
+    }
     
-    BMPImage* saturada=saturate_bmp(&imagenRecibida,5.0);
-    write_bmp("./MAJORAS.bmp",saturada);
-    
-    printf("PASÓ EL WRITE \n");
- 
-    printf("TERMINÓ EL WORKER \n");
 
+    printf("terminó WORKER \n");
     exit(0);
 
 }
