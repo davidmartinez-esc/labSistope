@@ -66,73 +66,12 @@ int **crear_pipes(int workers)
     return pipes;
 }
 
-void write_bmp_nopointer(const char* filename, BMPImage image) {
-    FILE* file = fopen(filename, "wb"); //wb = write binary
-    if (!file) {
-        fprintf(stderr, "Error: No se pudo abrir el archivo.\n");
-        return;
-    }
 
-    BMPHeader header;
-    header.type = 0x4D42;
-    header.size = sizeof(BMPHeader) + sizeof(BMPInfoHeader) + image.width * image.height * sizeof(RGBPixel);
-    header.offset = sizeof(BMPHeader) + sizeof(BMPInfoHeader);
-
-    BMPInfoHeader info_header;
-    info_header.size = sizeof(BMPInfoHeader);
-    info_header.width = image.width;
-    info_header.height = image.height;
-    info_header.planes = 1;
-    info_header.bit_count = 24; // está fijado en 24 en este ejemplo pero puede ser 1, 4, 8, 16, 24 o 32
-    info_header.size_image = image.width * image.height * sizeof(RGBPixel);
-
-    fwrite(&header, sizeof(BMPHeader), 1, file);
-    fwrite(&info_header, sizeof(BMPInfoHeader), 1, file);
-
-    int padding = (4 - (image.width * sizeof(RGBPixel)) % 4) % 4;
-    for (int y = image.height - 1; y >= 0; y--) {
-        for (int x = 0; x < image.width; x++) {
-            RGBPixel pixel = image.data[y * image.width + x];
-            fwrite(&pixel, sizeof(RGBPixel), 1, file);
-        }
-
-        RGBPixel padding_pixel = {0};
-        fwrite(&padding_pixel, sizeof(RGBPixel), padding, file);
-    }
-
-    fclose(file);
-}
-
-
-void send_image_through_pipe(int fd, BMPImage image) {
-    printf("EMPEZÓ EL SEND IMAGE \n");
-    write_bmp_nopointer("./DENTROSENDIMAGE.bmp",image);
-    // Luego escribir la estructura BMPImage
-    write(fd, &image, sizeof(BMPImage));
-    
-    printf("SE EJECUTÓ ENVIAR COSAS POR EL PIPE DE FORMA EFECTIVA\n");
-
-    return;
-}
-
-BMPImage receive_image_from_pipe(int fd) {
-  
-    BMPImage image;
- 
-
-    // Leer la estructura BMPImage del pipe
-    read(fd, &image, sizeof(BMPImage));
-       
-    printf("La imagen recibida tiene largo %d y alto %d ",image.width,image.height);
-    printf("SE EJECUTÓ LEER COSAS POR EL PIPE DE FORMA EFECTIVA \n");
-    write_bmp_nopointer("./DENTRORECEIVE.bmp",image);
-    return image;
-}
 
 
 
 int main(int argc, char *argv[]) {
-    printf("  Empezó el broker \n");
+  
     char* N = argv[1];
     int f=atoi(argv[2]);
     float p=atof(argv[3]);
@@ -161,9 +100,6 @@ int main(int argc, char *argv[]) {
     int pids[W];
    
     int i=0;
-
-   
-
     int pipeBrokerToMain[2];
 
     int fragmentsCollected=0;
@@ -193,23 +129,21 @@ int main(int argc, char *argv[]) {
     int resto=image->width%W;
 
 
-    printf("EL ANCHO DEL FRAGMENTO ES %d",fragmentWidth);
-
     int inicio=0;
     int fin=fragmentWidth;
 
     fragmentsTransfered=0;
 
-       mkdir(C,S_IRWXU);
+    mkdir(C,S_IRWXU);
 
-       strcat(pathSaturated,C);
-       strcat(pathSaturated,"/saturated.bmp");
+    strcat(pathSaturated,C);
+    strcat(pathSaturated,"/saturated.bmp");
 
-       strcat(pathGreyScale,C);
-       strcat(pathGreyScale,"/grey.bmp");
+    strcat(pathGreyScale,C);
+    strcat(pathGreyScale,"/grey.bmp");
 
-        strcat(pathBinary,C);
-        strcat(pathBinary,"/binary.bmp");
+    strcat(pathBinary,C);
+    strcat(pathBinary,"/binary.bmp");
     //AQUI EL BROKER ENVIA LAS COSAS  LOS WORKERS
 
     while(fragmentsTransfered!=W){
@@ -229,7 +163,6 @@ int main(int argc, char *argv[]) {
                 write(pipes[fragmentsTransfered * 2 + 1][1],&pixelBonito.b,sizeof(unsigned char));
              }
     }
-
     inicio=inicio+fragmentWidth;
     if(fragmentsTransfered==(W-1)){
         fin=fin+fragmentWidth+resto;
@@ -237,16 +170,10 @@ int main(int argc, char *argv[]) {
     else{
         fin=fin+fragmentWidth;
     }
-    
-
     fragmentsTransfered++;
-
-
     }
 
   
-
-
 
     //RESETEAMOS INICIO Y FIN
     inicio=0;
@@ -359,27 +286,7 @@ int main(int argc, char *argv[]) {
     }
 
     int isBinaryNearly_black = is_nearly_black(image, v);
-    /*
-    pipe(pipeBrokerToMain);
-    dup2(pipeBrokerToMain[READ_END],STDIN_FILENO);
-    close(pipeBrokerToMain[READ_END]);
-
-    write(pipeBrokerToMain[WRITE_END],&image->width,sizeof(int));
-    write(pipeBrokerToMain[WRITE_END],&image->height,sizeof(int));
-
-      for (int y = 0; y < image->height; y++) {
-                for (int x=0 ; x < image->width; x++) {
-                RGBPixel pixelBonito = image->data[y * image->width + x];
-               
-                write(pipeBrokerToMain[WRITE_END],&pixelBonito.r,sizeof(unsigned char));
-                write(pipeBrokerToMain[WRITE_END],&pixelBonito.g,sizeof(unsigned char));
-                write(pipeBrokerToMain[WRITE_END],&pixelBonito.b,sizeof(unsigned char));
-             }
-    }
-    */
-  
-
-
+   
     classifications[0]=isSaturatedNearly_black;
     classifications[1]=isGreyNearly_black;
     classifications[2]=isBinaryNearly_black;
@@ -390,7 +297,6 @@ int main(int argc, char *argv[]) {
    
 
 
-    printf("TERMINO EL BROKER \n");
             
     exit(0);
     return 0;

@@ -166,9 +166,6 @@ int main(int argc, char *argv[]) {
     //Aqui le pongo la extension al nombre del archivo ingresado con la flag -N
     strcat(N,".bmp");
 
-
-    
-
     pid = fork();
 
     if(pid == 0){
@@ -187,45 +184,11 @@ int main(int argc, char *argv[]) {
     }
     // Si el pid es > a 0 significa que es el proceso padre
     else{
-        printf("Soy el MAIN \n");
+        
         waitpid(pid, NULL, 0);
 
     }
     
-    /*
-
-    BMPImage imagenRecibida;
-
-    read(STDIN_FILENO,&imagenRecibida.width,sizeof(int));
-    read(STDIN_FILENO,&imagenRecibida.height,sizeof(int));
-
-
-    imagenRecibida.data = (RGBPixel*)malloc(imagenRecibida.width * imagenRecibida.height * sizeof(RGBPixel));
-
-    printf("EMPEZÓ A LEER  MAIN \n");
-     for (int y = 0; y < imagenRecibida.height; y++) {
-            for (int x = 0; x < imagenRecibida.width; x++) {
-            RGBPixel pixelRecibido;
-            read(STDIN_FILENO,&pixelRecibido.r,sizeof(unsigned char));
-            read(STDIN_FILENO,&pixelRecibido.g,sizeof(unsigned char));
-            read(STDIN_FILENO,&pixelRecibido.b,sizeof(unsigned char));
-            //pixelRecibido.r=(unsigned char) r;
-            //pixelRecibido.g=(unsigned char) g;
-            //pixelRecibido.b=(unsigned char) b;
-
-            imagenRecibida.data[y * imagenRecibida.width + x] = pixelRecibido;
-            //imagenRecibida.data[y * imagenRecibida.width + x]=pixelRecibido;
-            }
-        }
-
-        printf("TERMINÓ DE LEER EL MAIN \n");
-
-    write_bmp("./delMain.bmp",&imagenRecibida);
-   */
-
-    // Como se reemplaza el proceso, el siguiente
-    // printf no se muestra
-   
 
     printf("Terminó el MAIN \n");
     return 0;
