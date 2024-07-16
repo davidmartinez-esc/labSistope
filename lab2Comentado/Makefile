@@ -20,5 +20,5 @@ funciones.o: funciones.c funciones.h
 	gcc -c $(FLAGS) funciones.c
 	
 clear:
-	rm -f lab2 broker *.o
+	rm -f lab2 broker worker *.o
 
