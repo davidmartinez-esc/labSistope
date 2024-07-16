@@ -17,7 +17,7 @@ COMANDOS DE PRUEBA EN LINUX
 
 ./lab1 -p 1.4 -u 1 -N rb -C finale -R log 
 
-./SALIDA -N imagen -f 2 -p 20 -C Ejemplo_nombre -R Nombre_resultado -W 1
+./SALIDA -N imagen -f 2 -p 1.5 -C Ejemplo_nombre -R Nombre_resultado -W 1
 
 gcc worker.c funciones.c -o worker
 

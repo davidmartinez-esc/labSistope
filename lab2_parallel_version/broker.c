@@ -14,6 +14,7 @@
 #define WRITE_END 1
 #define MAXBUFFERSIZE 128
 
+
 void crear_workers(int workers,int **pipes, int *pids)
 {
     for (int i = 0; i < workers; i++) {
@@ -161,7 +162,9 @@ int main(int argc, char *argv[]) {
    
     int i=0;
 
-    int tuberias[2];
+   
+
+    int pipeBrokerToMain[2];
 
     int fragmentsCollected=0;
     int fragmentsTransfered=0;
@@ -184,9 +187,11 @@ int main(int argc, char *argv[]) {
                 return 1;
         }
 
-    write_bmp("./juan.bmp",image);
+ 
 
     int fragmentWidth=image->width / W;
+    int resto=image->width%W;
+
 
     printf("EL ANCHO DEL FRAGMENTO ES %d",fragmentWidth);
 
@@ -195,11 +200,25 @@ int main(int argc, char *argv[]) {
 
     fragmentsTransfered=0;
 
+       mkdir(C,S_IRWXU);
+
+       strcat(pathSaturated,C);
+       strcat(pathSaturated,"/saturated.bmp");
+
+       strcat(pathGreyScale,C);
+       strcat(pathGreyScale,"/grey.bmp");
+
+        strcat(pathBinary,C);
+        strcat(pathBinary,"/binary.bmp");
+    //AQUI EL BROKER ENVIA LAS COSAS  LOS WORKERS
+
     while(fragmentsTransfered!=W){
 
     write(pipes[fragmentsTransfered * 2 + 1][1],&fragmentWidth,sizeof(int));
     write(pipes[fragmentsTransfered * 2 + 1][1],&image->height,sizeof(int));
 
+    write(pipes[fragmentsTransfered * 2 + 1][1],&p,sizeof(float));
+    write(pipes[fragmentsTransfered * 2 + 1][1],&u,sizeof(float));
 
        for (int y = 0; y < image->height; y++) {
                 for (int x=inicio; x < fin; x++) {
@@ -212,7 +231,13 @@ int main(int argc, char *argv[]) {
     }
 
     inicio=inicio+fragmentWidth;
-    fin=fin+fragmentWidth;
+    if(fragmentsTransfered==(W-1)){
+        fin=fin+fragmentWidth+resto;
+    }
+    else{
+        fin=fin+fragmentWidth;
+    }
+    
 
     fragmentsTransfered++;
 
@@ -221,9 +246,7 @@ int main(int argc, char *argv[]) {
 
   
 
-            
- 
-      write_bmp("./juanitu.bmp",image);
+
 
     //RESETEAMOS INICIO Y FIN
     inicio=0;
@@ -233,54 +256,141 @@ int main(int argc, char *argv[]) {
     
     while(fragmentsCollected!=W){
      
-        
         for (int y = 0; y < image->height; y++) {
             for (int x=inicio; x < fin; x++) {
             RGBPixel pixelRecibido;
             read(pipes[fragmentsCollected * 2][0],&pixelRecibido.r,sizeof(unsigned char));
             read(pipes[fragmentsCollected * 2][0],&pixelRecibido.g,sizeof(unsigned char));
             read(pipes[fragmentsCollected * 2][0],&pixelRecibido.b,sizeof(unsigned char));
-            //pixelRecibido.r=(unsigned char) r;
-            //pixelRecibido.g=(unsigned char) g;
-            //pixelRecibido.b=(unsigned char) b;
 
             image->data[y * image->width + x]= pixelRecibido;
             //imagenRecibida.data[y * imagenRecibida.width + x]=pixelRecibido;
             }
         }
         inicio=inicio+fragmentWidth;
-        fin=fin+fragmentWidth;
+        
+         if(fragmentsCollected==(W-1)){
+        fin=fin+fragmentWidth+resto;
+        }
+        else{
+            fin=fin+fragmentWidth;
+        }
+        
 
         fragmentsCollected++;
 
     }
-       
-       write_bmp("./gris.bmp",image);
+    if(f>=1){
+    write_bmp(pathSaturated,image);
+    }
+    int isSaturatedNearly_black = is_nearly_black(image, v);
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////
+    inicio=0;
+    fin=fragmentWidth;
+
+    fragmentsCollected=0;
+    
+    while(fragmentsCollected!=W){
+     
+        for (int y = 0; y < image->height; y++) {
+            for (int x=inicio; x < fin; x++) {
+            RGBPixel pixelRecibido;
+            read(pipes[fragmentsCollected * 2][0],&pixelRecibido.r,sizeof(unsigned char));
+            read(pipes[fragmentsCollected * 2][0],&pixelRecibido.g,sizeof(unsigned char));
+            read(pipes[fragmentsCollected * 2][0],&pixelRecibido.b,sizeof(unsigned char));
+
+            image->data[y * image->width + x]= pixelRecibido;
+            //imagenRecibida.data[y * imagenRecibida.width + x]=pixelRecibido;
+            }
+        }
+        inicio=inicio+fragmentWidth;
+        
+         if(fragmentsCollected==(W-1)){
+        fin=fin+fragmentWidth+resto;
+        }
+        else{
+            fin=fin+fragmentWidth;
+        }
+        
+
+        fragmentsCollected++;
+
+    }
+    if(f>=2){
+    write_bmp(pathGreyScale,image);
+    }
+    int isGreyNearly_black = is_nearly_black(image, v);
+    /////////////////////////////////////////////////////////////////////////////////////////////////
 
     inicio=0;
     fin=fragmentWidth;
 
-    for (int x = inicio; x < (image->width/2); x++) {
-    for (int y = 0; y < image->height; y++) {
-        RGBPixel pixelRecibido;
+    fragmentsCollected=0;
+    
+    while(fragmentsCollected!=W){
+     
+        for (int y = 0; y < image->height; y++) {
+            for (int x=inicio; x < fin; x++) {
+            RGBPixel pixelRecibido;
+            read(pipes[fragmentsCollected * 2][0],&pixelRecibido.r,sizeof(unsigned char));
+            read(pipes[fragmentsCollected * 2][0],&pixelRecibido.g,sizeof(unsigned char));
+            read(pipes[fragmentsCollected * 2][0],&pixelRecibido.b,sizeof(unsigned char));
 
-        pixelRecibido.r=(unsigned char) 0;
-        pixelRecibido.g=(unsigned char) 0;
-        pixelRecibido.b=(unsigned char) 0;
-        // pixelRecibido.r = (unsigned char) r;
-        // pixelRecibido.g = (unsigned char) g;
-        // pixelRecibido.b = (unsigned char) b;
-
-        image->data[y * image->width + x] = pixelRecibido;
-        // imagenRecibida.data[y * imagenRecibida.width + x] = pixelRecibido;
+            image->data[y * image->width + x]= pixelRecibido;
+            //imagenRecibida.data[y * imagenRecibida.width + x]=pixelRecibido;
+            }
         }
+        inicio=inicio+fragmentWidth;
+        
+         if(fragmentsCollected==(W-1)){
+        fin=fin+fragmentWidth+resto;
+        }
+        else{
+            fin=fin+fragmentWidth;
+        }
+        
+
+        fragmentsCollected++;
+
+    }
+    if(f>=3){
+    write_bmp(pathBinary,image);
     }
 
-      write_bmp("./blacky.bmp",image);
+    int isBinaryNearly_black = is_nearly_black(image, v);
+    /*
+    pipe(pipeBrokerToMain);
+    dup2(pipeBrokerToMain[READ_END],STDIN_FILENO);
+    close(pipeBrokerToMain[READ_END]);
+
+    write(pipeBrokerToMain[WRITE_END],&image->width,sizeof(int));
+    write(pipeBrokerToMain[WRITE_END],&image->height,sizeof(int));
+
+      for (int y = 0; y < image->height; y++) {
+                for (int x=0 ; x < image->width; x++) {
+                RGBPixel pixelBonito = image->data[y * image->width + x];
+               
+                write(pipeBrokerToMain[WRITE_END],&pixelBonito.r,sizeof(unsigned char));
+                write(pipeBrokerToMain[WRITE_END],&pixelBonito.g,sizeof(unsigned char));
+                write(pipeBrokerToMain[WRITE_END],&pixelBonito.b,sizeof(unsigned char));
+             }
+    }
+    */
+  
+
+
+    classifications[0]=isSaturatedNearly_black;
+    classifications[1]=isGreyNearly_black;
+    classifications[2]=isBinaryNearly_black;
+
+    create_csv(R, image_names, classifications, f);
+
+
    
 
 
-            
+    printf("TERMINO EL BROKER \n");
             
     exit(0);
     return 0;

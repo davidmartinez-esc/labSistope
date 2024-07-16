@@ -12,6 +12,19 @@
 #define READ_END 0
 #define WRITE_END 1
 
+void sendToBroker(BMPImage* imagen, int*fd){
+     for (int y = 0; y < imagen->height; y++) {
+                for (int x = 0; x < imagen->width; x++) {
+                RGBPixel pixelBonito = imagen->data[y * imagen->width + x];
+             
+                write(fd[WRITE_END],&pixelBonito.r,sizeof(unsigned char));
+                write(fd[WRITE_END],&pixelBonito.g,sizeof(unsigned char));
+                write(fd[WRITE_END],&pixelBonito.b,sizeof(unsigned char));
+             }
+    }
+    
+}
+
 void write_bmp_nopointer(const char* filename, BMPImage image) {
     FILE* file = fopen(filename, "wb"); //wb = write binary
     if (!file) {
@@ -131,10 +144,16 @@ int main(int argc, char *argv[]) {
     fd[READ_END]=atoi(argv[2]);
     fd[WRITE_END]=atoi(argv[1]);
 
+    float saturationFactor=0.0;
+    float binarizationFactor=0.0;
+
     BMPImage imagenRecibida;
  
     read(fd[READ_END],&imagenRecibida.width,sizeof(int));
     read(fd[READ_END],&imagenRecibida.height,sizeof(int));
+
+    read(fd[READ_END],&saturationFactor,sizeof(float));
+     read(fd[READ_END],&binarizationFactor,sizeof(float));
 
     imagenRecibida.data = (RGBPixel*)malloc(imagenRecibida.width * imagenRecibida.height * sizeof(RGBPixel));
 
@@ -161,21 +180,27 @@ int main(int argc, char *argv[]) {
 
       
    
-    BMPImage* imagenEscalaGrises=greyscale_bmp(&imagenRecibida);
+    BMPImage* imagenSaturada=saturate_bmp(&imagenRecibida,saturationFactor);
    
 
-    for (int y = 0; y < imagenEscalaGrises->height; y++) {
-                for (int x = 0; x < imagenEscalaGrises->width; x++) {
-                RGBPixel pixelBonito = imagenEscalaGrises->data[y * imagenEscalaGrises->width + x];
-                int r=(int) pixelBonito.r;
-                int g=(int) pixelBonito.g;
-                int b=(int) pixelBonito.b;
-                write(fd[WRITE_END],&pixelBonito.r,sizeof(unsigned char));
-                write(fd[WRITE_END],&pixelBonito.g,sizeof(unsigned char));
-                write(fd[WRITE_END],&pixelBonito.b,sizeof(unsigned char));
-             }
-    }
-    write_bmp("./creadaPorWorker.bmp",imagenEscalaGrises);
+    sendToBroker(imagenSaturada,fd);
+
+    BMPImage* imagenGreyscale=greyscale_bmp(imagenSaturada);
+
+    sendToBroker(imagenGreyscale,fd);
+
+    BMPImage* imagenBinarizada=binarize_bmp(imagenGreyscale,binarizationFactor);
+
+    sendToBroker(imagenBinarizada,fd);
+
+   
+
+
+    
+
+
+
+
 
     printf("terminó WORKER \n");
     exit(0);
