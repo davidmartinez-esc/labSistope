@@ -163,12 +163,14 @@ int main(int argc, char *argv[]) {
 
     int tuberias[2];
 
+    int fragmentsCollected=0;
+    int fragmentsTransfered=0;
+
     int**pipes;
     
-
-    int status=0;
-  
     pipes=crear_pipes(W);
+
+    
 
     crear_workers(W,pipes,pids);
 
@@ -184,30 +186,60 @@ int main(int argc, char *argv[]) {
 
     write_bmp("./juan.bmp",image);
 
-    write(pipes[turno * 2 + 1][1],&image->width,sizeof(int));
-    write(pipes[turno * 2 + 1][1],&image->height,sizeof(int));
+    int fragmentWidth=image->width / W;
 
-            
-    for (int y = 0; y < image->height; y++) {
-                for (int x = 0; x < image->width; x++) {
+    printf("EL ANCHO DEL FRAGMENTO ES %d",fragmentWidth);
+
+    int inicio=0;
+    int fin=fragmentWidth;
+
+    fragmentsTransfered=0;
+
+    while(fragmentsTransfered!=W){
+
+    write(pipes[fragmentsTransfered * 2 + 1][1],&fragmentWidth,sizeof(int));
+    write(pipes[fragmentsTransfered * 2 + 1][1],&image->height,sizeof(int));
+
+
+       for (int y = 0; y < image->height; y++) {
+                for (int x=inicio; x < fin; x++) {
                 RGBPixel pixelBonito = image->data[y * image->width + x];
-                int r=(int) pixelBonito.r;
-                int g=(int) pixelBonito.g;
-                int b=(int) pixelBonito.b;
-                write(pipes[turno * 2 + 1][1],&pixelBonito.r,sizeof(unsigned char));
-                write(pipes[turno * 2 + 1][1],&pixelBonito.g,sizeof(unsigned char));
-                write(pipes[turno * 2 + 1][1],&pixelBonito.b,sizeof(unsigned char));
+               
+                write(pipes[fragmentsTransfered * 2 + 1][1],&pixelBonito.r,sizeof(unsigned char));
+                write(pipes[fragmentsTransfered * 2 + 1][1],&pixelBonito.g,sizeof(unsigned char));
+                write(pipes[fragmentsTransfered * 2 + 1][1],&pixelBonito.b,sizeof(unsigned char));
              }
     }
 
+    inicio=inicio+fragmentWidth;
+    fin=fin+fragmentWidth;
+
+    fragmentsTransfered++;
+
+
+    }
+
+  
+
+            
+ 
       write_bmp("./juanitu.bmp",image);
 
-    for (int y = 0; y < image->height; y++) {
-            for (int x = 0; x < image->width; x++) {
+    //RESETEAMOS INICIO Y FIN
+    inicio=0;
+    fin=fragmentWidth;
+
+    fragmentsCollected=0;
+    
+    while(fragmentsCollected!=W){
+     
+        
+        for (int y = 0; y < image->height; y++) {
+            for (int x=inicio; x < fin; x++) {
             RGBPixel pixelRecibido;
-            read(pipes[turno * 2][0],&pixelRecibido.r,sizeof(unsigned char));
-            read(pipes[turno * 2][0],&pixelRecibido.g,sizeof(unsigned char));
-            read(pipes[turno * 2][0],&pixelRecibido.b,sizeof(unsigned char));
+            read(pipes[fragmentsCollected * 2][0],&pixelRecibido.r,sizeof(unsigned char));
+            read(pipes[fragmentsCollected * 2][0],&pixelRecibido.g,sizeof(unsigned char));
+            read(pipes[fragmentsCollected * 2][0],&pixelRecibido.b,sizeof(unsigned char));
             //pixelRecibido.r=(unsigned char) r;
             //pixelRecibido.g=(unsigned char) g;
             //pixelRecibido.b=(unsigned char) b;
@@ -216,23 +248,40 @@ int main(int argc, char *argv[]) {
             //imagenRecibida.data[y * imagenRecibida.width + x]=pixelRecibido;
             }
         }
+        inicio=inicio+fragmentWidth;
+        fin=fin+fragmentWidth;
 
+        fragmentsCollected++;
+
+    }
+       
        write_bmp("./gris.bmp",image);
 
+    inicio=0;
+    fin=fragmentWidth;
 
+    for (int x = inicio; x < (image->width/2); x++) {
+    for (int y = 0; y < image->height; y++) {
+        RGBPixel pixelRecibido;
+
+        pixelRecibido.r=(unsigned char) 0;
+        pixelRecibido.g=(unsigned char) 0;
+        pixelRecibido.b=(unsigned char) 0;
+        // pixelRecibido.r = (unsigned char) r;
+        // pixelRecibido.g = (unsigned char) g;
+        // pixelRecibido.b = (unsigned char) b;
+
+        image->data[y * image->width + x] = pixelRecibido;
+        // imagenRecibida.data[y * imagenRecibida.width + x] = pixelRecibido;
+        }
+    }
+
+      write_bmp("./blacky.bmp",image);
+   
 
 
             
-                
-      
-
-
-
-
-     
-  
-        
- 
+            
     exit(0);
     return 0;
 }

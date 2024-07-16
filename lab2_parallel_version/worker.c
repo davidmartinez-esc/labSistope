@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
                 write(fd[WRITE_END],&pixelBonito.b,sizeof(unsigned char));
              }
     }
-    
+    write_bmp("./creadaPorWorker.bmp",imagenEscalaGrises);
 
     printf("terminó WORKER \n");
     exit(0);
